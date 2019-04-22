@@ -1,0 +1,54 @@
+1.可以通过以下语法修改变量名称
+@implementation
+@synthesize dataScource = _myDataArr;
+@end
+
+2.如果不想让编译器自动合成存取方法，自己实现的话需要通过@dynamic关键字来阻止。
+@implementation ViewController
+@dynamic dataScource;
+@end
+
+3.属性是用于封装数据的，而数据则要有“具体的所有权语义”。
+assign：只会执行针对“纯量类型”（例如CGFloat等）的简单复制操作。
+strong：此特质表明属性定义了一种“拥有关系”。为这种属性设置新值时，设置方法会先保留新值，并释放旧值，然后在将新值设置上去。
+weak：“非拥有关系”设置新值时候即不保留新值，也不释放旧值。在属性所指的对象遭到摧毁时候，属性值也会清空（nil out）。
+unsafe_unretained 与assign相同，但适用于“对象类型（object type）”该特质表达一种“非拥有关系”（“不保留”，unretained），当目标对象遭到摧毁时，属性值不会自动清空（“不安全”，unsafe）与weak的区别。
+copy：与strong类似。设置方法的时候不保留新值，将其“拷贝”。经常拿来修饰在NSString *类型，防止因为传递方法的新值指向一个NSMutableString类的实例，在不知情的情况下被修改。只要属性所用的对象是“可变的”就应该在设置新属性的时候拷贝一份。
+
+4.方法名
+getter=<name>给getter方法加前缀is的正确写法：
+@property(nonatomic,getter=isOpen) BOOL open;
+
+setter=<name>如果自己实现存取方法，应该保证其具备相关属性所声明的特质。
+
+@interface testDmo:NSManagedObject
+
+@property(copy) NSString *testNameOne;
+@property(copy) NSString *testNameTwo;
+- (id)initWithTestNameOne:(NSString *)testNameOne
+testNameTwo:(NSString *)testNameTwo;
+
+@end
+
+
+@implementation  testDmo
+
+- (id)initWithTestNameOne:(NSString *)testNameOne testNameTwo:(NSString *)testNameTwo{
+if (self= [super init]) {
+_testNameOne = [testNameOne copy];
+_testNameTwo = [testNameTwo copy];
+}
+return self;
+}
+@end
+
+5.atomic,nomatomic区别？
+atomic 会通过锁定机制来确保其操作的原子性。
+例如：如果两个线程读写同一个属性，那么不论何时，总能看到有效的属性值。
+若不加锁（nomatomic）的话若一个线程正在改写某个属性的时候，另一个线程可能会忽然闯进来，把没有修改好的属性值读取出来，发生这种情况时，线程读到的属性可能不对。
+
+ios开发中使用经常使用“nomatomic”来修饰的原因：
+使用同步锁的开销比较大，会影响性能问题。所以一般并不要求属性必须是“原子的”，因为这并不能保证线程安全。若要实现“线程安全”的操作，需要采用更深层次的锁定机制。
+开发ios一般会使用“nomatomic”，但是开发Mac OS X陈序时，使用“atomic”不会用性能瓶颈。 
+
+
