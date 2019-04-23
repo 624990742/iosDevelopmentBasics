@@ -52,3 +52,46 @@ ios开发中使用经常使用“nomatomic”来修饰的原因：
 开发ios一般会使用“nomatomic”，但是开发Mac OS X陈序时，使用“atomic”不会用性能瓶颈。 
 
 
+6.在对象内部尽量直接访问实例变量
+区别：
+<1.直接访问成员变量要比通过@property生成的属性速度快,因为编译器会直接访问保存对象实例变量的那快内存。
+<2.直接方法实例变量，不会生成getter和setter方法。例如：在arc的情况下，访问一个声明copy的属性，并不会拷贝属性，只会保留新值并释放旧值。
+<3.属性可以方便断点调试，直接访问实例变量不会触发kvo。
+总结：
+  <1.在写入实例变量时，尽可能使用声明属性的方式，读取的值的时候，可以采用成员变量的方式读取。
+  <2.在对象的内部读取数据时应该通过实例变量来读写，写入数据的时候则通过属性来写。
+  <3.在初始化以及dealloc方法中，尽可能使用实例变量来读写数据。
+  <4.有时候会使用懒加载初始化配置某份数据，这种情况下需要属性读取。
+
+7.等同性
+<1.“==”操作符 比较的是两个指针本身，而不是所指向的对象。
+<2.NSObject中的 “isEqual”是比较两个对象的等同性。字符串使用“isEqualToString”要比“isEqual”快
+<3.如果两个对象相等，则哈希值（hash）也相等。但是两个哈希值相等的对象未必相等。
+比较两个哈希值的方法：
+方法一：(消耗性能)
+- (NSUInteger)hash{
+NSString *temp =[NSString stringWithFormat:@"%:%@",_firtname,_fullname];
+return [temp hash];
+}
+
+方法二：(推荐使用)
+-(NSUInteger)hash{
+NSUInteger firstnme = [_firtname hash];
+NSUInteger fullname = [_fullname hash];
+return firstnme ^ fullname;
+}
+
+如果两个对象属于同一个类，比较对象是否相等必须比较“指针”和“实例变量”相等才是真正的相等。
+- (BOOL)isEqualDog:(Dogmodel *)otherDog{
+if (self == otherDog) return YES;
+if (![_firtname isEqualToString:otherDog.firtname]) return NO;
+return YES;
+}
+
+如果两个对象不是同一个类就用系统的方法。
+- (BOOL)isEqual:(id)object{
+if ([self class] == [object class]) {
+return [self isEqualDog:object]
+}
+return [super isEqual:object];
+}
